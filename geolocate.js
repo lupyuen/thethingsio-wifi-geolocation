@@ -37,7 +37,6 @@ function saveLocation(thingToken, device, locationAccuracy, callback) {
   //    "lat": 1.2733663,
   //    "lng": 103.8096363 },
   //  "accuracy": 39.0 }
-  if (!device) { throw new Error('missing device'); }
   const location = locationAccuracy.location;  
   if (!location) { throw new Error('missing location'); }
   const accuracy = locationAccuracy.accuracy;  
