@@ -1,7 +1,7 @@
 # thethingsio-wifi-geolocation
 thethings.io Cloud Code that performs WiFi Geolocation by calling Google Geolocation API
 
-thethings.io Cloud Code Trigger `forward_geolocate` receives WiFi MAC Addressed and Signal Strength via CoAP (UDP), scanned by STM32 Blue Pill connected to ESP8266 running Apache Mynewt:
+thethings.io Cloud Code Trigger `forward_geolocate` receives WiFi Access Point MAC Addressed and Signal Strength via CoAP (UDP), scanned by STM32 Blue Pill, running Apache Mynewt connected to ESP8266:
 
 https://github.com/lupyuen/stm32bluepill-mynewt-sensor/tree/esp8266
 
