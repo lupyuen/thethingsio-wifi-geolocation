@@ -1,4 +1,4 @@
-const API_KEY = 'Your Google Geolocation API Key';
+const API_KEY = 'YOUR_API_KEY';  //  Your Google Geolocation API Key
 
 //  This Cloud Code Function is called by Cloud Code Trigger "forward_geolocate" to perform
 //  WiFi Geolocation requests.  We pass the received WiFi SSID MAC addresses and Signal Strength
@@ -31,18 +31,26 @@ function geolocate(accessPoints, callback) {
   });
 }
 
-function saveLocation(thingToken, locationAccuracy, callback) {
+function saveLocation(thingToken, device, locationAccuracy, callback) {
   //  Save the location and accuracy into the thing object.  locationAccuracy contains 
   //  { "location": {
   //    "lat": 1.2733663,
   //    "lng": 103.8096363 },
   //  "accuracy": 39.0 }
+  if (!device) { throw new Error('missing device'); }
   const location = locationAccuracy.location;  
   if (!location) { throw new Error('missing location'); }
   const accuracy = locationAccuracy.accuracy;  
   if (!accuracy) { throw new Error('missing accuracy'); }
   //  Save the location under the key geolocation_accuracy.  Must be in this format to render on map.
   const values = [{
+    key: 'device',
+    value: device ? device : '(unknown)',
+    geo: {
+      lat: location.lat,
+      long: location.lng
+    }
+  }, {
     key: 'geolocation_accuracy',
     value: accuracy,
     geo: {
@@ -66,6 +74,7 @@ function main(params, callback) {
   //  {
   //	"thingToken":"...",
   //    "values":[
+  //      {"key":"device","value":"my_device_id"},
   //	  {"key":"ssid0","value":"88:41:fc:bb:00:00"},{"key":"rssi0","value":-82},
   //	  {"key":"ssid1","value":"88:41:fc:d6:00:00"},{"key":"rssi1","value":-91},
   //  	  {"key":"ssid2","value":"18:d6:c7:3c:00:00"},{"key":"rssi2","value":-92}
@@ -92,6 +101,7 @@ function main(params, callback) {
   }
   console.log('accessPoints', accessPoints);
   if (accessPoints.length == 0) { throw new Error('missing access points'); }
+  const device = values.reduce((found, x) => (x.key == 'device' ? x.value : found), null);
 
   //  Call the geolocation API.
   return geolocate(accessPoints, function(err, result) {
@@ -101,6 +111,6 @@ function main(params, callback) {
     const locationAccuracyObj = JSON.parse(locationAccuracy);
     
     //  Save the location into the thing object.
-    return saveLocation(thingToken, locationAccuracyObj, callback);
+    return saveLocation(thingToken, device, locationAccuracyObj, callback);
   });
 }
