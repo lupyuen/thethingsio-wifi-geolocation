@@ -7,12 +7,16 @@ const PUSH_SECURE = true;  //  True for https, false for http.
 //  This Cloud Code Trigger is executed whenever a CoAP message is received.
 //  If the message contains "ssid0" and "rssi0" values, we forward the message to
 //  Cloud Code Function "geolocate" to perform the geolocation.
+
+//  If the message contains raw temperature "t" but not computed temperature "tmp",
+//  we forward to Cloud Code Function "transform" to compute the temperature.
+
 //  Cloud Code Triggers must complete within 2 seconds. So we forward the processing to 
 //  another cloud function, which can execute up to 20 seconds.
 
 function pushSensorData(values, callback) {
-  //  Push the sensor data to the Google Cloud AppEngine Server running g
-  //  cloud-wifi-geolocation. See https://github.com/lupyuen/gcloud-wifi-geolocation
+  //  Push the sensor data to the Google Cloud AppEngine Server running
+  //  gcloud-wifi-geolocation. See https://github.com/lupyuen/gcloud-wifi-geolocation
   
   //  Compose body for push request. Body looks like
   //  {device:"my_device", tmp:28.1, latitude:1.23, longitude:1.23, accuracy:1.23}
@@ -83,6 +87,7 @@ function trigger(params, callback) {
   //  [{"key":"device","value":"my_device_id"},
   //   {"key":"t","value":1744}]
   console.log('forward_geolocate', values);
+  const device = values.reduce((found, x) => (x.key == 'device' ? x.value : found), null);
   
   //  Look for ssid0 and rssi0 keys.
   const ssid0 = values.reduce((found, x) => (x.key == 'ssid0' ? x.value : found), null);
@@ -92,11 +97,13 @@ function trigger(params, callback) {
   //  Function without waiting for it to complete.
   if (ssid0 && rssi0) {
     console.log('forward to geolocate');
-  	thethingsAPI.cloudFunction('geolocate', params, function(err, res) {});
-    return callback();  
+  	thethingsAPI.cloudFunction('geolocate', params, function(err, res) {
+      if (err) { console.log('geolocate error', err); }
+    });
+    return callback();  //  Exit without waiting for Cloud Code Function to complete.
   }
   
-  //  Look for t, the raw temperature, and tmp, the computed temperature.
+  //  Look for "t" the raw temperature, and "tmp" the computed temperature.
   //  If raw temperature is found but not computed temperature,
   //  forward to "transform" Cloud Code Function to transform and update the values.
   //  Don't wait for the Cloud Code Function to complete.
@@ -104,12 +111,14 @@ function trigger(params, callback) {
   const tmp = values.reduce((found, x) => (x.key == 'tmp' ? x.value : found), null);
   if (t && !tmp) { 
     console.log('forward to transform');
-  	thethingsAPI.cloudFunction('transform', params, function(err, res) {});
-    return callback();  
+  	thethingsAPI.cloudFunction('transform', params, function(err, res) {
+      if (err) { console.log('transform error', err); }
+    });
+    return callback();  //  Exit without waiting for Cloud Code Function to complete.
   }
   
-  //  Otherwise push the sensor data to the external server without 
-  //  waiting for it to complete.
-  pushSensorData(values, null);
-  return callback();
+  //  If geolocation and transformation are not required, push the finalised
+  //  sensor data to the external server without waiting for it to complete.
+  pushSensorData(values, null);  
+  return callback();  //  Exit without waiting for external server push to complete.
 }
