@@ -8,7 +8,12 @@ function transformValues(thingToken, device, values, callback) {
   //  transform the raw temperature to computed temperature and update 
   //  the thing state.
   let updated = false;
-  let newValues = [{ key: 'device', value: device || 'unknown' }];
+  const node = values.reduce((found, x) => (x.key == 'node' ? x.value : found), null);
+  let newValues = [
+    { key: 'device', value: device || 'unknown' },
+    { key: 'node', value: node || 'unknown' }
+  ];
+  //  TODO: Given node ID, map to a thingToken in order to update the thing that represents the node.
   
   //  Look for raw temperature t and computed temperature tmp.
   const t = values.reduce((found, x) => (x.key == 't' ? x.value : found), null);
