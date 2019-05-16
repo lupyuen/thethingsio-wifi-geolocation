@@ -2,18 +2,15 @@
 //  raw temperature "t" into computed temperature "tmp".  The computed temperature is saved in 
 //  the thing object as resource "tmp".  The value is the temperature in degrees Celsius.
 
-function transformValues(thingToken, device, values, callback) {
+function transformValues(params, callback) {
   //  In values, look for "t" the raw temperature, and "tmp" the computed temperature.
   //  If raw temperature is found but not computed temperature,
   //  transform the raw temperature to computed temperature and update 
   //  the thing state.
-  let updated = false;
-  const node = values.reduce((found, x) => (x.key == 'node' ? x.value : found), null);
-  let newValues = [
-    { key: 'device', value: device || 'unknown' },
-    { key: 'node', value: node || 'unknown' }
-  ];
-  //  TODO: Given node ID, map to a thingToken in order to update the thing that represents the node.
+  const thingToken = params.thingToken;
+  if (!thingToken) { throw new Error('missing thingToken'); }
+  const values = params.values;
+  if (!values) { throw new Error('missing values'); }  
   
   //  Look for raw temperature t and computed temperature tmp.
   const t = values.reduce((found, x) => (x.key == 't' ? x.value : found), null);
@@ -27,42 +24,14 @@ function transformValues(thingToken, device, values, callback) {
     tmp = tmp / 10.0;
     tmp = parseInt(tmp * 100) / 100.0;  //  Truncate to 2 decimal places. 
     //  Write the computed temperature into values as "tmp".
-    newValues.push({ key: 'tmp', value: tmp });
-    updated = true;
+    values.push({ key: 'tmp', value: tmp });
   }
   
-  //  If values have not changed, return.
-  if (!updated) { return callback(null, 'OK'); }
-
   //  Post the updated values back to thethings.io. 
-  const body = { values: newValues };
-  const headers = {
-    Accept:        'application/json',
-    Connection:    'close',
-    'Content-Type':'application/json'
-  };
-  return httpRequest({
-    host:   'api.thethings.io',
-    path:   '/v2/things/' + thingToken + '?broadcast=true',  //  Must set broadcast so that dashboard will be updated.
-    secure: true,
-    method: 'POST',
-    headers: headers
-  }, body, function(err, result) {
-    if (err) { 
-      console.log('update error', err); 
-      if (callback) { return callback(err); }
-      return;
-    }
-    console.log('update result', result);
-    if (callback) { return callback(null, result); }
+  return thethingsAPI.cloudFunction('update_thing', params, function(err, res) {
+    if (err) { console.log('update_thing error', err); return callback(err); }
+    return callback(null, res);
   });
-
-  /* Note: Calling thingWrite() does not update the dashboard.
-  return thethingsAPI.thingWrite(thingToken, { values: newValues }, function(err, result) {
-    if (err) { console.log('thingWrite error', err); return callback(err, null); }
-    console.log('thingWrite result', result);
-    return callback(null, result);
-  }); */
 }
 
 function main(params, callback) {
@@ -82,7 +51,12 @@ function main(params, callback) {
   const values = params.values;
   if (!values) { throw new Error('missing values'); }  
   const device = values.reduce((found, x) => (x.key == 'device' ? x.value : found), null);
+  const transformed = values.reduce((found, x) => (x.key == 'transformed' ? x.value : found), null);
+  
+  //  If already transformed, quit.
+  if (transformed) { return callback(null, 'OK'); }
+  values.push({ key: 'transformed', value: true });
 
   //  Transform the values and save the updated values into thing object.
-  return transformValues(thingToken, device, values, callback);
+  return transformValues(params, callback);
 }
