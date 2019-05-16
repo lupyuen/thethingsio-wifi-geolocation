@@ -31,7 +31,7 @@ function geolocate(accessPoints, callback) {
   });
 }
 
-function saveLocation(thingToken, device, locationAccuracy, callback) {
+function saveLocation(thingToken, device, node, locationAccuracy, callback) {
   //  Save the location and accuracy into the thing object.  locationAccuracy contains 
   //  { "location": {
   //    "lat": 1.2733663,
@@ -41,27 +41,25 @@ function saveLocation(thingToken, device, locationAccuracy, callback) {
   if (!location) { throw new Error('missing location'); }
   const accuracy = locationAccuracy.accuracy;  
   if (!accuracy) { throw new Error('missing accuracy'); }
-  //  Save the location under the key geolocation_accuracy.  Must be in this format to render on map.
+  //  Save the location under the keys "device", "node" and "geolocation_accuracy".  Must be in this format to render on map.
   const values = [{
     key: 'device',
-    value: device ? device : '(unknown)',
-    geo: {
-      lat: location.lat,
-      long: location.lng
-    }
+    value: device || '(unknown)',
+    geo: { lat: location.lat, long: location.lng }
+  }, {
+    key: 'node',
+    value: node || '(unknown)',
+    geo: { lat: location.lat, long: location.lng }
   }, {
     key: 'geolocation_accuracy',
     value: accuracy,
-    geo: {
-      lat: location.lat,
-      long: location.lng
-    }
+    geo: { lat: location.lat, long: location.lng }
   }];
-  //  Update the thing.
-  return thethingsAPI.thingWrite(thingToken, { values: values }, function(err, result) {
-    if (err) { console.log('thingWrite error'); console.error(err); return callback(err); }
-    console.log('thingWrite result', result);
-    return callback(null, result);
+  //  Post the updated values back to thethings.io. 
+  const params = { thingToken, values };
+  return thethingsAPI.cloudFunction('update_thing', params, function(err, res) {
+    if (err) { console.log('update_thing error', err); return callback(err); }
+    return callback(null, res);
   });
 }
 
@@ -101,6 +99,7 @@ function main(params, callback) {
   console.log('accessPoints', accessPoints);
   if (accessPoints.length == 0) { throw new Error('missing access points'); }
   const device = values.reduce((found, x) => (x.key == 'device' ? x.value : found), null);
+  const node = values.reduce((found, x) => (x.key == 'node' ? x.value : found), null);
 
   //  Call the geolocation API.
   return geolocate(accessPoints, function(err, result) {
@@ -110,6 +109,6 @@ function main(params, callback) {
     const locationAccuracyObj = JSON.parse(locationAccuracy);
     
     //  Save the location into the thing object.
-    return saveLocation(thingToken, device, locationAccuracyObj, callback);
+    return saveLocation(thingToken, device, node, locationAccuracyObj, callback);
   });
 }
