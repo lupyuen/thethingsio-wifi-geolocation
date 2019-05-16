@@ -8,8 +8,8 @@ const PUSH_SECURE = true;  //  True for https, false for http.
 //  If the message contains "ssid0" and "rssi0" values, we forward the message to
 //  Cloud Code Function "geolocate" to perform the geolocation.
 
-//  If the message contains raw temperature "t" but not computed temperature "tmp",
-//  we forward to Cloud Code Function "transform" to compute the temperature.
+//  If the message has not been transformed, we forward to Cloud Code Function "transform" 
+//  to transform the values, like converting raw temperature to actual temperature.
 
 //  Cloud Code Triggers must complete within 2 seconds. So we forward the processing to 
 //  another cloud function, which can execute up to 20 seconds.
@@ -93,8 +93,8 @@ function trigger(params, callback) {
   const ssid0 = values.reduce((found, x) => (x.key == 'ssid0' ? x.value : found), null);
   const rssi0 = values.reduce((found, x) => (x.key == 'rssi0' ? x.value : found), null);
   
-  //  If this is a valid geolocation request, forward to "geolocate" Cloud Code 
-  //  Function without waiting for it to complete.
+  //  If this is a valid geolocation request with ssid0 and rssi0 keys, forward to 
+  //  "geolocate" Cloud Code Function without waiting for it to complete.
   if (ssid0 && rssi0) {
     console.log('forward to geolocate');
   	thethingsAPI.cloudFunction('geolocate', params, function(err, res) {
@@ -103,13 +103,11 @@ function trigger(params, callback) {
     return callback();  //  Exit without waiting for Cloud Code Function to complete.
   }
   
-  //  Look for "t" the raw temperature, and "tmp" the computed temperature.
-  //  If raw temperature is found but not computed temperature,
-  //  forward to "transform" Cloud Code Function to transform and update the values.
-  //  Don't wait for the Cloud Code Function to complete.
-  const t = values.reduce((found, x) => (x.key == 't' ? x.value : found), null);
-  const tmp = values.reduce((found, x) => (x.key == 'tmp' ? x.value : found), null);
-  if (t && !tmp) { 
+  //  Look for the "transformed" key. If not found, then this message has not been
+  //  transformed yet.  Forward to "transform" Cloud Code Function to transform and 
+  //  update the values.  Don't wait for the Cloud Code Function to complete.
+  const transformed = values.reduce((found, x) => (x.key == 'transformed' ? x.value : found), null);
+  if (!transformed) { 
     console.log('forward to transform');
   	thethingsAPI.cloudFunction('transform', params, function(err, res) {
       if (err) { console.log('transform error', err); }
