@@ -3,15 +3,12 @@
 //  the values.
 
 function updateThing(params, callback) {
-  //  In values, look for "t" the raw temperature, and "tmp" the computed temperature.
-  //  If raw temperature is found but not computed temperature,
-  //  transform the raw temperature to computed temperature and update 
-  //  the thing state.
+  //  params contains thingToken and values, containing the sensor values.
+  //  Update the thing state for the thingToken, applying the sensor values.
   const thingToken = params.thingToken;
   if (!thingToken) { throw new Error('missing thingToken'); }
   const values = params.values;
   if (!values) { throw new Error('missing values'); }  
-
   const node = values.reduce((found, x) => (x.key == 'node' ? x.value : found), null);
 
   //  TODO: Map node to a thingToken to that we can update the actual thing that represents the sensor node.
