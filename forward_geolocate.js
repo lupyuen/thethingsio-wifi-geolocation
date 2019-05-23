@@ -1,7 +1,7 @@
 //  Server URL that will receive sensor data. 
 //  See https://github.com/lupyuen/gcloud-wifi-geolocation.
-const PUSH_HOST   = 'YOUR_SERVER.appspot.com';
-const PUSH_PATH   = '/push?token=YOUR_TOKEN';
+const PUSH_HOST   = null;  //  Set to your server hostname: 'YOUR_SERVER.appspot.com';
+const PUSH_PATH   = null;  //  Set to your server path: '/push?token=YOUR_TOKEN';
 const PUSH_SECURE = true;  //  True for https, false for http.
 
 //  This Cloud Code Trigger is executed whenever a CoAP message is received.
@@ -117,6 +117,6 @@ function trigger(params, callback) {
   
   //  If geolocation and transformation are not required, push the finalised
   //  sensor data to the external server without waiting for it to complete.
-  pushSensorData(values, null);  
+  if (PUSH_HOST) { pushSensorData(values, null); }
   return callback();  //  Exit without waiting for external server push to complete.
 }
