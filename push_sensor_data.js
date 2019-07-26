@@ -71,7 +71,7 @@ function main(params, callback) {
   //  Reject if update has expired.
   const now = Date.now().valueOf();
   if (now - timestamp > 2 * 1000) {
-    console.log('push_sensor_data expired', new Date(timestamp).toISOString(), values);
+    console.log('push_sensor_data expired', Math.floor((now - timestamp) / 1000), new Date(timestamp).toISOString(), values);
     return callback();
   }
 
