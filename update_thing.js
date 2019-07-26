@@ -29,11 +29,8 @@ function updateThing(params, callback) {
   }, body, function(err, result) {
     if (err) { 
       console.log('update error', err); 
-      ////if (callback) { return callback(err); }
       return;
     }
-    ////console.log('update result', result);
-    ////if (callback) { return callback(null, result); }
   });
   if (callback) { return callback(null, body ); }  //  Don't wait for update to complete.
   
@@ -65,10 +62,13 @@ function main(params, callback) {
   //  If timestamp is not found, reject the update.
   const timestamp = values.reduce((found, x) => (x.key == 'timestamp' ? x.value : found), null);
   if (!timestamp) { return callback(); }
-  //  Reject if update has expired.
+  
+  //  Reject if update has expired (2 seconds).  This discards older updates 
+  //  and throttles the throughput.
   const now = Date.now().valueOf();
-  if (now - timestamp > 4 * 1000) {
-    console.log('update_thing expired', Math.floor((now - timestamp) / 1000), new Date(timestamp).toISOString(), values);
+  if (now - timestamp > 2 * 1000) {
+    console.log('update_thing expired', Math.floor((now - timestamp) / 1000), 
+                new Date(timestamp).toISOString(), values);
     return callback();
   }
   
