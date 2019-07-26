@@ -28,10 +28,14 @@ function transformValues(params, callback) {
   }
   
   //  Post the updated values back to thethings.io. 
-  return thethingsAPI.cloudFunction('update_thing', params, function(err, res) {
-    if (err) { console.log('update_thing error', err); return callback(err); }
-    return callback(null, res);
+  thethingsAPI.cloudFunction('update_thing', params, function(err, res) {
+    if (err) { 
+      console.log('update_thing error', err); 
+      //  return callback(err); 
+    }
+    //  return callback(null, res);
   });
+  return callback(null, params);  //  Don't wait for update_thing to complete.
 }
 
 function main(params, callback) {
