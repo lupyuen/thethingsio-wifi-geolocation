@@ -5,8 +5,7 @@
 function transformValues(params, callback) {
   //  In values, look for "t" the raw temperature, and "tmp" the computed temperature.
   //  If raw temperature is found but not computed temperature,
-  //  transform the raw temperature to computed temperature and update 
-  //  the thing state.
+  //  transform the raw temperature to computed temperature and update the thing state.
   const thingToken = params.thingToken;
   if (!thingToken) { throw new Error('missing thingToken'); }
   const values = params.values;
@@ -18,7 +17,8 @@ function transformValues(params, callback) {
   
   if (t && !tmp) {  //  If raw temperature is found but not computed temperature...
     //  Convert the raw temperature (Blue Pill Internal Temperature Sensor) to 
-    //  actual temperature (degrees C). From https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f446RE/src/ch12/main-ex1.c
+    //  actual temperature (degrees C). From 
+    //  https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f446RE/src/ch12/main-ex1.c
     let tmp = (t / 4095.0) * 3300.0;
     tmp = ((tmp - 760.0) / 2.5) + 25.0;
     tmp = tmp / 10.0;
@@ -31,17 +31,16 @@ function transformValues(params, callback) {
   thethingsAPI.cloudFunction('update_thing', params, function(err, res) {
     if (err) { 
       console.log('update_thing error', err); 
-      //  return callback(err); 
     }
-    //  return callback(null, res);
   });
   
+  //  Concurrently, push the transformed sensor data to the external server (Google Cloud AppEngine).
   console.log('forward to push_sensor_data', values);
   thethingsAPI.cloudFunction('push_sensor_data', params, function(err, res) {
     if (err) { console.log('push_sensor_data error', err); }
   });
 
-  return callback(null, params);  //  Don't wait for update_thing to complete.
+  return callback(null, params);  //  Don't wait for update or push to complete.
 }
 
 function main(params, callback) {
@@ -66,10 +65,13 @@ function main(params, callback) {
   //  If timestamp is not found, reject the update.
   const timestamp = values.reduce((found, x) => (x.key == 'timestamp' ? x.value : found), null);
   if (!timestamp) { return callback(); }
-  //  Reject if update has expired.
+  
+  //  Reject if update has expired (2 seconds). This discards older updates 
+  //  and throttles the throughput.
   const now = Date.now().valueOf();
   if (now - timestamp > 2 * 1000) {
-    console.log('transform expired', Math.floor((now - timestamp) / 1000), new Date(timestamp).toISOString(), values);
+    console.log('transform expired', Math.floor((now - timestamp) / 1000), 
+                new Date(timestamp).toISOString(), values);
     return callback();
   }
 
