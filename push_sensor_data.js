@@ -65,6 +65,16 @@ function main(params, callback) {
   const values = params.values;
   if (!values) { throw new Error('missing values'); }  
 
+  //  If timestamp is not found, reject the update.
+  const timestamp = values.reduce((found, x) => (x.key == 'timestamp' ? x.value : found), null);
+  if (!timestamp) { return callback(); }
+  //  Reject if update has expired.
+  const now = Date.now().valueOf();
+  if (now - timestamp > 1000) {
+    console.log('push_sensor_data expired', values);
+    return callback();
+  }
+
   //  Push the sensor data to the external server without waiting for it to complete.
   if (PUSH_HOST) { pushSensorData(values, null); }
   return callback();  //  Exit without waiting for external server push to complete.
