@@ -20,7 +20,7 @@ function updateThing(params, callback) {
     Connection:    'close',
     'Content-Type':'application/json'
   };
-  return httpRequest({
+  httpRequest({
     host:   'api.thethings.io',
     path:   '/v2/things/' + thingToken + '?broadcast=true',  //  Must set broadcast so that dashboard will be updated.
     secure: true,
@@ -29,12 +29,13 @@ function updateThing(params, callback) {
   }, body, function(err, result) {
     if (err) { 
       console.log('update error', err); 
-      if (callback) { return callback(err); }
-      return;
+      //  if (callback) { return callback(err); }
+      //  return;
     }
-    console.log('update result', result);
-    if (callback) { return callback(null, result); }
+    //  console.log('update result', result);
+    //  if (callback) { return callback(null, result); }
   });
+  if (callback) { return callback(null, body ); }  //  Don't wait for update to complete.
 
   /* Note: Calling thingWrite() does not update the dashboard.
   return thethingsAPI.thingWrite(thingToken, { values: newValues }, function(err, result) {
