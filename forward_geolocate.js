@@ -43,15 +43,17 @@ function trigger(params, callback) {
   const ssid0 = values.reduce((found, x) => (x.key == 'ssid0' ? x.value : found), null);
   const rssi0 = values.reduce((found, x) => (x.key == 'rssi0' ? x.value : found), null);
   
-  //  Timestamp every update to reject expired updates.
+  //  Timestamp every update to reject expired updates and throttle requests.
   const now = Date.now().valueOf();
   if (!timestamp) { 
     //  If timestamp is not found, add it.
     values.push({ key: 'timestamp', value: now }); 
   } else {
-    //  Reject if update has expired.
-    if (now - timestamp > 2 * 1000) {
-      console.log('forward_geolocate expired', Math.floor((now - timestamp) / 1000), new Date(timestamp).toISOString(), values);
+    //  Reject if update has expired (1 second). This discards older updates and 
+    //  throttles the throughput.
+    if (now - timestamp > 1 * 1000) {
+      console.log('forward_geolocate expired', Math.floor((now - timestamp) / 1000), 
+                  new Date(timestamp).toISOString(), values);
       return callback();
     }
   }
@@ -77,14 +79,5 @@ function trigger(params, callback) {
     });
     return callback();  //  Exit without waiting for Cloud Code Function to complete.
   }
-  
-  /*
-  //  If geolocation and transformation are not required, push the finalised
-  //  sensor data to the external server without waiting for it to complete.
-  console.log('forward to push_sensor_data', values);
-  thethingsAPI.cloudFunction('push_sensor_data', params, function(err, res) {
-    if (err) { console.log('push_sensor_data error', err); }
-  });
-  */
-  return callback();  //  Exit without waiting for external server push to complete.
+  return callback();  //  If already transformed, do nothing.
 }
