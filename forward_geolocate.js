@@ -1,9 +1,3 @@
-//  Server URL that will receive sensor data. 
-//  See https://github.com/lupyuen/gcloud-wifi-geolocation.
-const PUSH_HOST   = null;  //  Set to your server hostname: 'YOUR_SERVER.appspot.com';
-const PUSH_PATH   = null;  //  Set to your server path: '/push?token=YOUR_TOKEN';
-const PUSH_SECURE = false; //  True for https, false for http (which may be faster)
-
 //  This Cloud Code Trigger is executed whenever a CoAP message is received.
 //  If the message contains "ssid0" and "rssi0" values, we forward the message to
 //  Cloud Code Function "geolocate" to perform the geolocation.
@@ -14,50 +8,6 @@ const PUSH_SECURE = false; //  True for https, false for http (which may be fast
 //  Cloud Code Triggers must complete within 2 seconds. So we forward the processing to 
 //  another cloud function, which can execute up to 20 seconds.
 
-function pushSensorData(values, callback) {
-  //  Push the sensor data to the Google Cloud AppEngine Server running
-  //  gcloud-wifi-geolocation. See https://github.com/lupyuen/gcloud-wifi-geolocation
-  
-  //  Compose body for push request. Body looks like
-  //  {device:"my_device", tmp:28.1, latitude:1.23, longitude:1.23, accuracy:1.23}
-  const body = {};
-  values.forEach(keyValue => {
-    //  Rename geolocation_accuracy to accuracy.
-    const key = (keyValue.key === 'geolocation_accuracy') ? 'accuracy' : keyValue.key;
-    const value = keyValue.value;
-    const geo = keyValue.geo;
-    if (!key) { return; }
-    body[key] = value;
-    
-    //  Save the geolocation.
-    if (!geo) { return; }
-    body.latitude = geo.lat;
-    body.longitude = geo.long;
-  });
-  console.log('push', body);
-  
-  //  Push the sensor data. 
-  httpRequest({
-    host:   PUSH_HOST,  //  e.g. YOUR_SERVER.appspot.com
-    path:   PUSH_PATH,  //  e.g.  /push?token=YOUR_TOKEN
-    secure: PUSH_SECURE,
-    method: 'POST',
-    headers: {
-      Accept:     '*/*',
-      Connection: 'close',
-      'Content-Type':'application/json'
-    }
-  }, body, function(err, result) {
-    if (err) { 
-      console.log('push error', err); 
-      //  if (callback) { return callback(err); }
-      //  return;
-    }
-    //  console.log('push result', result);
-    //  if (callback) { return callback(null, result); }
-  });
-}
-
 /* Cloud Code Trigger convention:
    params: is an object with the keys:
     - action: one of 'write' | 'read'
@@ -67,8 +17,7 @@ function pushSensorData(values, callback) {
     - value: the data sent
     - datetime: (can be null)
    callback: is a function to be called when the trigger ends can contain a
-       parameter string *error* if the trigger needs to report an error.
-*/
+       parameter string *error* if the trigger needs to report an error. */
 function trigger(params, callback) {
   if (params.action !== 'write') { return callback(); }  //  Interested only in update actions, not read.
   const values = params.values;
@@ -117,6 +66,9 @@ function trigger(params, callback) {
   
   //  If geolocation and transformation are not required, push the finalised
   //  sensor data to the external server without waiting for it to complete.
-  if (PUSH_HOST) { pushSensorData(values, null); }
+  console.log("before push_sensor_data");
+  thethingsAPI.cloudFunction('push_sensor_data', params, function(err, res) {
+    if (err) { console.log('push_sensor_data error', err); }
+  });
   return callback();  //  Exit without waiting for external server push to complete.
 }
