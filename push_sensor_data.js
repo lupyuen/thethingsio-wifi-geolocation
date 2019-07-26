@@ -40,11 +40,11 @@ function pushSensorData(values, callback) {
   }, body, function(err, result) {
     if (err) { 
       console.log('push error', err); 
-      //  if (callback) { return callback(err); }
-      //  return;
+      if (callback) { return callback(err); }
+      return;
     }
-    //  console.log('push result', result);
-    //  if (callback) { return callback(null, result); }
+    console.log('push result', result);
+    if (callback) { return callback(null, result); }
   });
 }
 
@@ -70,12 +70,12 @@ function main(params, callback) {
   if (!timestamp) { return callback(); }
   //  Reject if update has expired.
   const now = Date.now().valueOf();
-  if (now - timestamp > 1000) {
-    console.log('push_sensor_data expired', values);
+  if (now - timestamp > 2 * 1000) {
+    console.log('push_sensor_data expired', new Date(timestamp).toISOString(), values);
     return callback();
   }
 
   //  Push the sensor data to the external server without waiting for it to complete.
-  if (PUSH_HOST) { pushSensorData(values, null); }
-  return callback();  //  Exit without waiting for external server push to complete.
+  if (PUSH_HOST) { return pushSensorData(values, callback); }
+  return callback();
 }
