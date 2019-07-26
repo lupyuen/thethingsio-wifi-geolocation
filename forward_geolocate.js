@@ -2,7 +2,7 @@
 //  See https://github.com/lupyuen/gcloud-wifi-geolocation.
 const PUSH_HOST   = null;  //  Set to your server hostname: 'YOUR_SERVER.appspot.com';
 const PUSH_PATH   = null;  //  Set to your server path: '/push?token=YOUR_TOKEN';
-const PUSH_SECURE = true;  //  True for https, false for http.
+const PUSH_SECURE = false; //  True for https, false for http (which may be faster)
 
 //  This Cloud Code Trigger is executed whenever a CoAP message is received.
 //  If the message contains "ssid0" and "rssi0" values, we forward the message to
@@ -50,11 +50,11 @@ function pushSensorData(values, callback) {
   }, body, function(err, result) {
     if (err) { 
       console.log('push error', err); 
-      if (callback) { return callback(err); }
-      return;
+      //  if (callback) { return callback(err); }
+      //  return;
     }
-    console.log('push result', result);
-    if (callback) { return callback(null, result); }
+    //  console.log('push result', result);
+    //  if (callback) { return callback(null, result); }
   });
 }
 
