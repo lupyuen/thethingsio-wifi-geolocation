@@ -8,8 +8,6 @@
 //  Cloud Code Triggers must complete within 2 seconds. So we forward the processing to 
 //  another cloud function, which can execute up to 20 seconds.
 
-var zzz = 0;
-
 /* Cloud Code Trigger convention:
    params: is an object with the keys:
     - action: one of 'write' | 'read'
@@ -25,7 +23,7 @@ function trigger(params, callback) {
   const values = params.values;
   if (!values) { return callback(); }
   const thingToken = params.thingToken;
-  console.log('forward_geolocate', zzz++, values);  
+  console.log('forward_geolocate', values);
   
   //  values contains geolocation parameters:
   //  [{"key":"device","value":"my_device_id"},
@@ -53,7 +51,7 @@ function trigger(params, callback) {
   } else {
     //  Reject if update has expired.
     if (now - timestamp > 2 * 1000) {
-      console.log('forward_geolocate expired', new Date(timestamp).toISOString(), values);
+      console.log('forward_geolocate expired', Math.floor((now - timestamp) / 1000), new Date(timestamp).toISOString(), values);
       return callback();
     }
   }
@@ -80,11 +78,13 @@ function trigger(params, callback) {
     return callback();  //  Exit without waiting for Cloud Code Function to complete.
   }
   
+  /*
   //  If geolocation and transformation are not required, push the finalised
   //  sensor data to the external server without waiting for it to complete.
   console.log('forward to push_sensor_data', values);
   thethingsAPI.cloudFunction('push_sensor_data', params, function(err, res) {
     if (err) { console.log('push_sensor_data error', err); }
   });
+  */
   return callback();  //  Exit without waiting for external server push to complete.
 }
