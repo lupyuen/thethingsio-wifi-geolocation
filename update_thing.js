@@ -56,12 +56,22 @@ function main(params, callback) {
   //	],
   //	"action":"write"
   //  }
-  console.log('transform', params);
+  console.log('update_thing', params);
   const thingToken = params.thingToken;
   if (!thingToken) { throw new Error('missing thingToken'); }
   const values = params.values;
   if (!values) { throw new Error('missing values'); }  
 
+  //  If timestamp is not found, reject the update.
+  const timestamp = values.reduce((found, x) => (x.key == 'timestamp' ? x.value : found), null);
+  if (!timestamp) { return callback(); }
+  //  Reject if update has expired.
+  const now = Date.now().valueOf();
+  if (now - timestamp > 1000) {
+    console.log('update_thing expired', values);
+    return callback();
+  }
+  
   //  Save the values into thing object.
   return updateThing(params, callback);
 }
