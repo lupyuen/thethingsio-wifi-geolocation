@@ -23,20 +23,22 @@ function updateThing(params, callback) {
   httpRequest({
     host:   'api.thethings.io',
     path:   '/v2/things/' + thingToken + '?broadcast=true',  //  Must set broadcast so that dashboard will be updated.
-    secure: true,
+    ////secure: true,
+    secure: false, ////
+    
     method: 'POST',
     headers: headers
   }, body, function(err, result) {
     if (err) { 
       console.log('update error', err); 
-      //  if (callback) { return callback(err); }
-      //  return;
+      ////if (callback) { return callback(err); }
+      return;
     }
-    //  console.log('update result', result);
-    //  if (callback) { return callback(null, result); }
+    ////console.log('update result', result);
+    ////if (callback) { return callback(null, result); }
   });
   if (callback) { return callback(null, body ); }  //  Don't wait for update to complete.
-
+  
   /* Note: Calling thingWrite() does not update the dashboard.
   return thethingsAPI.thingWrite(thingToken, { values: newValues }, function(err, result) {
     if (err) { console.log('thingWrite error', err); return callback(err, null); }
@@ -67,8 +69,8 @@ function main(params, callback) {
   if (!timestamp) { return callback(); }
   //  Reject if update has expired.
   const now = Date.now().valueOf();
-  if (now - timestamp > 1000) {
-    console.log('update_thing expired', values);
+  if (now - timestamp > 2 * 1000) {
+    console.log('update_thing expired', new Date(timestamp).toISOString(), values);
     return callback();
   }
   
