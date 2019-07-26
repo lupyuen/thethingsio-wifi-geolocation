@@ -49,9 +49,9 @@ function trigger(params, callback) {
     //  If timestamp is not found, add it.
     values.push({ key: 'timestamp', value: now }); 
   } else {
-    //  Reject if update has expired (1 second). This discards older updates and 
+    //  Reject if update has expired (2 seconds). This discards older updates and 
     //  throttles the throughput.
-    if (now - timestamp > 1 * 1000) {
+    if (now - timestamp > 2 * 1000) {
       console.log('forward_geolocate expired', Math.floor((now - timestamp) / 1000), 
                   new Date(timestamp).toISOString(), values);
       return callback();
