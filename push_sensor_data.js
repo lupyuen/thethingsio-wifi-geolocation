@@ -69,10 +69,10 @@ function main(params, callback) {
   const timestamp = values.reduce((found, x) => (x.key == 'timestamp' ? x.value : found), null);
   if (!timestamp) { return callback(); }
   
-  //  Reject if update has expired (3 seconds). This discards older updates 
+  //  Reject if update has expired (4 seconds). This discards older updates 
   //  and throttles the throughput.
   const now = Date.now().valueOf();
-  if (now - timestamp > 3 * 1000) {
+  if (now - timestamp > 4 * 1000) {
     console.log('push_sensor_data expired', Math.floor((now - timestamp) / 1000), 
                 new Date(timestamp).toISOString(), values);
     return callback();
