@@ -23,9 +23,7 @@ function updateThing(params, callback) {
   httpRequest({
     host:   'api.thethings.io',
     path:   '/v2/things/' + thingToken + '?broadcast=true',  //  Must set broadcast so that dashboard will be updated.
-    ////secure: true,
-    secure: false, ////
-    
+    secure: true,
     method: 'POST',
     headers: headers
   }, body, function(err, result) {
@@ -69,8 +67,8 @@ function main(params, callback) {
   if (!timestamp) { return callback(); }
   //  Reject if update has expired.
   const now = Date.now().valueOf();
-  if (now - timestamp > 2 * 1000) {
-    console.log('update_thing expired', new Date(timestamp).toISOString(), values);
+  if (now - timestamp > 4 * 1000) {
+    console.log('update_thing expired', Math.floor((now - timestamp) / 1000), new Date(timestamp).toISOString(), values);
     return callback();
   }
   
