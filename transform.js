@@ -31,11 +31,11 @@ function transformValues(params, callback) {
   thethingsAPI.cloudFunction('update_thing', params, function(err, res) {
     if (err) { 
       console.log('update_thing error', err); 
-      //  return callback(err); 
+      return callback(err); 
     }
-    //  return callback(null, res);
+    return callback(null, res);
   });
-  return callback(null, params);  //  Don't wait for update_thing to complete.
+  //  return callback(null, params);  //  Don't wait for update_thing to complete.
 }
 
 function main(params, callback) {
@@ -62,8 +62,8 @@ function main(params, callback) {
   if (!timestamp) { return callback(); }
   //  Reject if update has expired.
   const now = Date.now().valueOf();
-  if (now - timestamp > 1000) {
-    console.log('transform expired', values);
+  if (now - timestamp > 2 * 1000) {
+    console.log('transform expired', new Date(timestamp).toISOString(), values);
     return callback();
   }
 
