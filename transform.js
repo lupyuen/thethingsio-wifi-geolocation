@@ -56,7 +56,17 @@ function main(params, callback) {
   if (!values) { throw new Error('missing values'); }  
   const device = values.reduce((found, x) => (x.key == 'device' ? x.value : found), null);
   const transformed = values.reduce((found, x) => (x.key == 'transformed' ? x.value : found), null);
-  
+
+  //  If timestamp is not found, reject the update.
+  const timestamp = values.reduce((found, x) => (x.key == 'timestamp' ? x.value : found), null);
+  if (!timestamp) { return callback(); }
+  //  Reject if update has expired.
+  const now = Date.now().valueOf();
+  if (now - timestamp > 1000) {
+    console.log('transform expired', values);
+    return callback();
+  }
+
   //  If already transformed, quit.
   if (transformed) { return callback(null, 'OK'); }
   values.push({ key: 'transformed', value: true });
