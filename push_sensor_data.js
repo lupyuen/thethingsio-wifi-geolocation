@@ -23,6 +23,8 @@ function pushSensorData(values, callback) {
     if (!geo) { return; }
     body.latitude = geo.lat;
     body.longitude = geo.long;
+    //  Assign an accuracy so that the website will render the location.
+    if (!body.accuracy) { body.accuracy = 99; }
   });
   console.log('push', body);
   
