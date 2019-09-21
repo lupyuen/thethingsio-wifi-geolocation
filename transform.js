@@ -13,14 +13,9 @@ function computeTemperature(rawValue, deviceType) {
     return temp;
   } else {
     //  STM32 F103 Blue Pill
-    //  From https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f446RE/src/ch12/main-ex1.c
-    let temp = (rawValue / 4095.0) * 3300.0;
-    temp = ((temp - 760.0) / 2.5) + 25.0;
-    temp = temp / 10.0;
-  
-    //  TODO: Compare with https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f103RB/src/ch12/main-ex1.c
-    //  let temp = (rawValue) / 4095.0 * 3300.0;
-    //  temp = ((temp - 1400.0) / 4.3) + 25.0;
+    //  From with https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f103RB/src/ch12/main-ex1.c
+    let temp = (rawValue) / 4095.0 * 3300.0;
+    temp = ((temp - 1400.0) / 4.3) + 25.0;
     return temp;
   }       
 }
