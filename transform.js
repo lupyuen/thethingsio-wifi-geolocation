@@ -42,7 +42,9 @@ function transformValues(params, callback) {
     let tmp = computeTemperature(t, deviceType);
     tmp = parseInt(tmp * 100) / 100.0;  //  Truncate to 2 decimal places. 
     //  Write the computed temperature into values as "tmp".
-    values.push({ key: 'tmp', value: tmp });
+    let val = { key: 'tmp', value: tmp };
+    if (t.geo) { val.geo = t.geo; }  //  Copy the geolocation
+    values.push(val);
   }
   
   //  Post the updated values back to thethings.io. 
