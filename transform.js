@@ -2,6 +2,29 @@
 //  raw temperature "t" into computed temperature "tmp".  The computed temperature is saved in 
 //  the thing object as resource "tmp".  The value is the temperature in degrees Celsius.
 
+function computeTemperature(rawValue, deviceType) {
+  //  Convert the raw temperature (STM32 Internal Temperature Sensor) to 
+  //  actual temperature (degrees C). 
+  if (deviceType == "l476") {
+    //  STM32 L476
+    //  From https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-l476RG/src/ch12/main-ex1.c
+    let temp = (rawValue) / 4095.0 * 3300.0;
+    temp = ((temp - 760.0) / 2.5) + 30.0;
+    return temp;
+  } else {
+    //  STM32 F103 Blue Pill
+    //  From https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f446RE/src/ch12/main-ex1.c
+    let temp = (rawValue / 4095.0) * 3300.0;
+    temp = ((temp - 760.0) / 2.5) + 25.0;
+    temp = temp / 10.0;
+  
+    //  TODO: Compare with https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f103RB/src/ch12/main-ex1.c
+    //  let temp = (rawValue) / 4095.0 * 3300.0;
+    //  temp = ((temp - 1400.0) / 4.3) + 25.0;
+    return temp;
+  }       
+}
+
 function transformValues(params, callback) {
   //  In values, look for "t" the raw temperature, and "tmp" the computed temperature.
   //  If raw temperature is found but not computed temperature,
@@ -14,14 +37,14 @@ function transformValues(params, callback) {
   //  Look for raw temperature t and computed temperature tmp.
   const t = values.reduce((found, x) => (x.key == 't' ? x.value : found), null);
   const tmp = values.reduce((found, x) => (x.key == 'tmp' ? x.value : found), null);
+  const device = values.reduce((found, x) => (x.key == 'device' ? x.value : found), null);
+  
+  //  Device type appears in the front of the device ID e.g. "l476,010203".
+  const deviceType = device ? device.split(",")[0] : "";
   
   if (t && !tmp) {  //  If raw temperature is found but not computed temperature...
-    //  Convert the raw temperature (Blue Pill Internal Temperature Sensor) to 
-    //  actual temperature (degrees C). From 
-    //  https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f446RE/src/ch12/main-ex1.c
-    let tmp = (t / 4095.0) * 3300.0;
-    tmp = ((tmp - 760.0) / 2.5) + 25.0;
-    tmp = tmp / 10.0;
+    //  Convert the raw temperature to actual temperature (degrees C).
+    let tmp = computeTemperature(t, deviceType);
     tmp = parseInt(tmp * 100) / 100.0;  //  Truncate to 2 decimal places. 
     //  Write the computed temperature into values as "tmp".
     values.push({ key: 'tmp', value: tmp });
