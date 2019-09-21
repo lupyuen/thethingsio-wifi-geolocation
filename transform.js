@@ -6,14 +6,12 @@ function computeTemperature(rawValue, deviceType) {
   //  Convert the raw temperature (STM32 Internal Temperature Sensor) to 
   //  actual temperature (degrees C). 
   if (deviceType == "l476") {
-    //  STM32 L476
-    //  From https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-l476RG/src/ch12/main-ex1.c
+    //  STM32 L476. From https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-l476RG/src/ch12/main-ex1.c
     let temp = (rawValue) / 4095.0 * 3300.0;
     temp = ((temp - 760.0) / 2.5) + 30.0;
     return temp;
   } else {
-    //  STM32 F103 Blue Pill
-    //  From with https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f103RB/src/ch12/main-ex1.c
+    //  STM32 F103 Blue Pill. From https://github.com/cnoviello/mastering-stm32/blob/master/nucleo-f103RB/src/ch12/main-ex1.c
     let temp = (rawValue) / 4095.0 * 3300.0;
     temp = ((temp - 1400.0) / 4.3) + 25.0;
     return temp;
@@ -30,12 +28,15 @@ function transformValues(params, callback) {
   if (!values) { throw new Error('missing values'); }  
   
   //  Look for raw temperature t and computed temperature tmp.
-  const t = values.reduce((found, x) => (x.key == 't' ? x.value : found), null);
-  const tmp = values.reduce((found, x) => (x.key == 'tmp' ? x.value : found), null);
+  const t      = values.reduce((found, x) => (x.key == 't'      ? x.value : found), null);
+  const tGeo   = values.reduce((found, x) => (x.key == 't'      ? x.geo   : found), null);
+  const tmp    = values.reduce((found, x) => (x.key == 'tmp'    ? x.value : found), null);
   const device = values.reduce((found, x) => (x.key == 'device' ? x.value : found), null);
   
   //  Device type appears in the front of the device ID e.g. "l476,010203".
-  const deviceType = device ? device.split(",")[0] : "";
+  const deviceType = (device && device.indexOf(",") >= 0) 
+    ? device.split(",")[0]  //  Take the device type before comma
+    : "";                   //  Else device type is ""
   
   if (t && !tmp) {  //  If raw temperature is found but not computed temperature...
     //  Convert the raw temperature to actual temperature (degrees C).
@@ -43,7 +44,7 @@ function transformValues(params, callback) {
     tmp = parseInt(tmp * 100) / 100.0;  //  Truncate to 2 decimal places. 
     //  Write the computed temperature into values as "tmp".
     let val = { key: 'tmp', value: tmp };
-    if (t.geo) { val.geo = t.geo; }  //  Copy the geolocation
+    if (tGeo) { val.geo = tGeo; }  //  Copy the geolocation
     values.push(val);
   }
   
